@@ -59,3 +59,32 @@ function add_user_role_settings() {
 
 add_action( 'init', 'add_user_role_settings' );
 
+
+function apply_role_arg( $args ) {
+	if ( isset( $_GET['role'] ) ) {
+		$args['role'] = sanitize_text_field( wp_unslash( $_GET['role'] ) );
+	}
+	return $args;
+}
+
+add_filter( 'woocommerce_analytics_orders_query_args', 'apply_role_arg' );
+add_filter( 'woocommerce_analytics_orders_stats_query_args', 'apply_role_arg' );
+
+function add_where_subquery( $clauses ) {
+	if ( isset( $_GET['role'] ) ) {
+		$role = sanitize_text_field( wp_unslash( $_GET['role'] ) );
+		$users = get_users(array(
+			'role' => $role,
+		));
+		$customer_ids = '';
+		foreach ($users as $user) {
+			$customer_ids .= $user->id . ',';
+		}
+		$clauses[] = "AND wc_order_stats.customer_id in '{$customer_ids}'";
+	}
+	return $clauses;
+}
+
+add_filter( 'woocommerce_analytics_clauses_where_orders_subquery', 'add_where_subquery' );
+add_filter( 'woocommerce_analytics_clauses_where_orders_stats_total', 'add_where_subquery' );
+add_filter( 'woocommerce_analytics_clauses_where_orders_stats_interval', 'add_where_subquery' );
