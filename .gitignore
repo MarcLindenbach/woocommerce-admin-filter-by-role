@@ -16,3 +16,4 @@ wp-cli.local.yml
 .vscode/
 /vendor/
 tags
+*.un~

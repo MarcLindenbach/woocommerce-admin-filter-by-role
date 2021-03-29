@@ -43,17 +43,18 @@ function add_extension_register_script() {
 add_action( 'admin_enqueue_scripts', 'add_extension_register_script' );
 
 function add_user_role_settings() {
-	$editable_roles = get_editable_roles();
+  global $wp_roles;
+  $all_roles = $wp_roles->roles;
+  $editable_roles = apply_filters('editable_roles', $all_roles);
 	foreach ($editable_roles as $role => $details) {
-			$sub['role'] = esc_attr($role);
-			$sub['name'] = details['name'];
+			$sub['value'] = esc_attr($role);
+			$sub['label'] = $details['name'];
 			$roles[] = $sub;
 	}
-	$data_registry = Automattic\WooCommerce\Blocks\Package::container()->get(
-			Automattic\WooCommerce\Blocks\Assets\AssetDataRegistry::class
-	);
-
-	$data_registry->add('roles', $currencies);
+  $data_registry = Automattic\WooCommerce\Blocks\Package::container()->get(
+      Automattic\WooCommerce\Blocks\Assets\AssetDataRegistry::class
+  );
+  $data_registry->add( 'roles', $roles );
 }
 
 add_action( 'init', 'add_user_role_settings' );
