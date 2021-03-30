@@ -93,15 +93,17 @@ add_filter( 'woocommerce_analytics_clauses_join_orders_stats_total', 'add_orders
 add_filter( 'woocommerce_analytics_clauses_join_orders_stats_interval', 'add_orders_join_subquery' );
 
 
-function apply_orders_role_arg( $args ) {
+function apply_role_args( $args ) {
 	if ( isset( $_GET['role'] ) ) {
 		$args['role'] = sanitize_text_field( wp_unslash( $_GET['role'] ) );
 	}
 	return $args;
 }
 
-add_filter( 'woocommerce_analytics_orders_query_args', 'apply_orders_role_arg' );
-add_filter( 'woocommerce_analytics_orders_stats_query_args', 'apply_orders_role_arg' );
+add_filter( 'woocommerce_analytics_customers_query_args', 'apply_role_args' );
+add_filter( 'woocommerce_analytics_customers_stats_query_args', 'apply_role_args' );
+add_filter( 'woocommerce_analytics_orders_query_args', 'apply_role_args' );
+add_filter( 'woocommerce_analytics_orders_stats_query_args', 'apply_role_args' );
 
 function add_orders_where_subquery( $clauses ) {
   global $wpdb;
@@ -142,16 +144,6 @@ function add_orders_where_subquery( $clauses ) {
 add_filter( 'woocommerce_analytics_clauses_where_orders_subquery', 'add_orders_where_subquery' );
 add_filter( 'woocommerce_analytics_clauses_where_orders_stats_total', 'add_orders_where_subquery' );
 add_filter( 'woocommerce_analytics_clauses_where_orders_stats_interval', 'add_orders_where_subquery' );
-
-function apply_customers_role_arg( $args ) {
-	if ( isset( $_GET['role'] ) ) {
-		$args['role'] = sanitize_text_field( wp_unslash( $_GET['role'] ) );
-	}
-	return $args;
-}
-
-add_filter( 'woocommerce_analytics_customers_query_args', 'apply_customers_role_arg' );
-add_filter( 'woocommerce_analytics_customers_stats_query_args', 'apply_customers_role_arg' );
 
 function add_customers_where_subquery( $clauses ) {
   global $wpdb;
