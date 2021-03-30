@@ -105,37 +105,42 @@ add_filter( 'woocommerce_analytics_customers_stats_query_args', 'apply_role_args
 add_filter( 'woocommerce_analytics_orders_query_args', 'apply_role_args' );
 add_filter( 'woocommerce_analytics_orders_stats_query_args', 'apply_role_args' );
 
+function get_user_ids_for_role( $role ) {
+  $all_roles = get_roles();
+  if ( $role == 'all_regular' ) {
+    $matching_roles = array_filter($all_roles, function($r) {
+      return !array_key_exists('have_wholesale_price', $r['capabilities']) ||
+        $r['capabilities']['have_wholesale_price'] === true;
+    });
+    foreach ($matching_roles as $k => $v) {
+      $search_roles[] = $k;
+    }
+  } else if ( $role == 'all_wholesale' ) {
+    $matching_roles = array_filter($all_roles, function($r) {
+      return $r['capabilities']['have_wholesale_price'] === true;
+    });
+    foreach ($matching_roles as $k => $v) {
+      $search_roles[] = $k;
+    }
+  } else {
+    $search_roles = array($role);
+  }
+  $users = get_users(array(
+    'role__in' => $search_roles,
+  ));
+  $user_ids = array();
+  foreach ($users as $user) {
+    $user_ids[] = $user->id;
+  }
+  return implode($user_ids, ',');
+}
+
 function add_orders_where_subquery( $clauses ) {
   global $wpdb;
 	if ( isset( $_GET['role'] ) ) {
 		$role = sanitize_text_field( wp_unslash( $_GET['role'] ) );
     if ( $role == '*' ) return $clauses;
-    $all_roles = get_roles();
-    if ( $role == 'all_regular' ) {
-      $matching_roles = array_filter($all_roles, function($r) {
-        return !array_key_exists('have_wholesale_price', $r['capabilities']);
-      });
-      foreach ($matching_roles as $k => $v) {
-        $search_roles[] = $k;
-      }
-    } else if ( $role == 'all_wholesale' ) {
-      $matching_roles = array_filter($all_roles, function($r) {
-        return $r['capabilities']['have_wholesale_price'] === true;
-      });
-      foreach ($matching_roles as $k => $v) {
-        $search_roles[] = $k;
-      }
-    } else {
-      $search_roles = array($role);
-    }
-		$users = get_users(array(
-			'role__in' => $search_roles,
-		));
-    $user_ids = array();
-		foreach ($users as $user) {
-			$user_ids[] = $user->id;
-		}
-    $user_ids_str = implode($user_ids, ',');
+    $user_ids_str = get_user_ids_for_role( $role );
     $clauses[] = "AND {$wpdb->postmeta}.meta_key = '_customer_user' AND {$wpdb->postmeta}.meta_value in ({$user_ids_str})";
 	}
 	return $clauses;
@@ -151,32 +156,7 @@ function add_customers_where_subquery( $clauses ) {
 	if ( isset( $_GET['role'] ) ) {
 		$role = sanitize_text_field( wp_unslash( $_GET['role'] ) );
     if ( $role == '*' ) return $clauses;
-    $all_roles = get_roles();
-    if ( $role == 'all_regular' ) {
-      $matching_roles = array_filter($all_roles, function($r) {
-        return !array_key_exists('have_wholesale_price', $r['capabilities']);
-      });
-      foreach ($matching_roles as $k => $v) {
-        $search_roles[] = $k;
-      }
-    } else if ( $role == 'all_wholesale' ) {
-      $matching_roles = array_filter($all_roles, function($r) {
-        return $r['capabilities']['have_wholesale_price'] === true;
-      });
-      foreach ($matching_roles as $k => $v) {
-        $search_roles[] = $k;
-      }
-    } else {
-      $search_roles = array($role);
-    }
-		$users = get_users(array(
-			'role__in' => $search_roles,
-		));
-    $user_ids = array();
-		foreach ($users as $user) {
-			$user_ids[] = $user->id;
-		}
-    $user_ids_str = implode($user_ids, ',');
+    $user_ids_str = get_user_ids_for_role( $role );
     $clauses[] = "AND {$wpdb->prefix}wc_customer_lookup.user_id in ({$user_ids_str})";
 	}
 	return $clauses;
