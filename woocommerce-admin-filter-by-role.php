@@ -42,13 +42,32 @@ function add_extension_register_script() {
 
 add_action( 'admin_enqueue_scripts', 'add_extension_register_script' );
 
-function add_user_role_settings() {
+function get_roles() {
   global $wp_roles;
   $all_roles = $wp_roles->roles;
-  $editable_roles = apply_filters('editable_roles', $all_roles);
+  return apply_filters('editable_roles', $all_roles);
+}
+
+function add_user_role_settings() {
+  $editable_roles = get_roles();
+  $roles = array(
+    array(
+      'value' => '*',
+      'label' => 'All Customers',
+    ),
+    array(
+      'value' => 'all_regular',
+      'label' => 'Regular Customers',
+    ),
+    array(
+      'value' => 'all_wholesale',
+      'label' => 'All Wholesale Customers',
+    ),
+  );
 	foreach ($editable_roles as $role => $details) {
 			$sub['value'] = esc_attr($role);
 			$sub['label'] = $details['name'];
+			$sub['details'] = $details['capabilities'];
 			$roles[] = $sub;
 	}
   $data_registry = Automattic\WooCommerce\Blocks\Package::container()->get(
@@ -58,6 +77,20 @@ function add_user_role_settings() {
 }
 
 add_action( 'init', 'add_user_role_settings' );
+
+function add_join_subquery( $clauses ) {
+  global $wpdb;
+	if ( isset( $_GET['role'] ) ) {
+		$role = sanitize_text_field( wp_unslash( $_GET['role'] ) );
+    if ( $role == '*' ) return $clauses;
+    $clauses[] = "JOIN {$wpdb->postmeta} ON {$wpdb->prefix}wc_order_stats.order_id = {$wpdb->postmeta}.post_id";
+  }
+  return $clauses;
+}
+
+add_filter( 'woocommerce_analytics_clauses_join_orders_subquery', 'add_join_subquery' );
+add_filter( 'woocommerce_analytics_clauses_join_orders_stats_total', 'add_join_subquery' );
+add_filter( 'woocommerce_analytics_clauses_join_orders_stats_interval', 'add_join_subquery' );
 
 
 function apply_role_arg( $args ) {
@@ -71,16 +104,37 @@ add_filter( 'woocommerce_analytics_orders_query_args', 'apply_role_arg' );
 add_filter( 'woocommerce_analytics_orders_stats_query_args', 'apply_role_arg' );
 
 function add_where_subquery( $clauses ) {
+  global $wpdb;
 	if ( isset( $_GET['role'] ) ) {
 		$role = sanitize_text_field( wp_unslash( $_GET['role'] ) );
+    if ( $role == '*' ) return $clauses;
+    $all_roles = get_roles();
+    if ( $role == 'all_regular' ) {
+      $matching_roles = array_filter($all_roles, function($r) {
+        return !array_key_exists('have_wholesale_price', $r['capabilities']);
+      });
+      foreach ($matching_roles as $k => $v) {
+        $search_roles[] = $k;
+      }
+    } else if ( $role == 'all_wholesale' ) {
+      $matching_roles = array_filter($all_roles, function($r) {
+        return $r['capabilities']['have_wholesale_price'] === true;
+      });
+      foreach ($matching_roles as $k => $v) {
+        $search_roles[] = $k;
+      }
+    } else {
+      $search_roles = array($role);
+    }
 		$users = get_users(array(
-			'role' => $role,
+			'role__in' => $search_roles,
 		));
-		$customer_ids = '';
+    $user_ids = array();
 		foreach ($users as $user) {
-			$customer_ids .= $user->id . ',';
+			$user_ids[] = $user->id;
 		}
-		$clauses[] = "AND wc_order_stats.customer_id in '{$customer_ids}'";
+    $user_ids_str = implode($user_ids, ',');
+    $clauses[] = "AND {$wpdb->postmeta}.meta_key = '_customer_user' AND {$wpdb->postmeta}.meta_value in ({$user_ids_str})";
 	}
 	return $clauses;
 }

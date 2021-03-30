@@ -9,7 +9,7 @@ const addRoleFilters = ( filters ) => {
 			staticParams: [],
 			param: 'role',
 			showFilters: () => true,
-			defaultValue: 'User',
+			defaultValue: '*',
 			filters: [ ...( wcSettings.roles || [] ) ],
 		},
 		...filters,
