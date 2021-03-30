@@ -155,6 +155,7 @@ add_filter( 'woocommerce_analytics_customers_stats_query_args', 'apply_customers
 
 function add_customers_where_subquery( $clauses ) {
   global $wpdb;
+
 	if ( isset( $_GET['role'] ) ) {
 		$role = sanitize_text_field( wp_unslash( $_GET['role'] ) );
     if ( $role == '*' ) return $clauses;
@@ -190,5 +191,5 @@ function add_customers_where_subquery( $clauses ) {
 }
 
 add_filter( 'woocommerce_analytics_clauses_where_customers_subquery', 'add_customers_where_subquery' );
-add_filter( 'woocommerce_analytics_clauses_where_customers_stats_total', 'add_customers_where_subquery' );
-add_filter( 'woocommerce_analytics_clauses_where_customers_stats_interval', 'add_customers_where_subquery' );
+add_filter( 'woocommerce_analytics_clauses_where_customers_stats_subquery', 'add_customers_where_subquery' );
+add_filter( 'woocommerce_analytics_report_should_use_cache', '__return_false' );
