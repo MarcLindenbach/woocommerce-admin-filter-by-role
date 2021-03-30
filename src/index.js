@@ -21,3 +21,9 @@ addFilter(
 	'woocommerce-admin-filter-by-role',
 	addRoleFilters
 );
+
+addFilter(
+	'woocommerce_admin_customers_report_filters',
+	'woocommerce-admin-filter-by-role',
+	addRoleFilters
+);
