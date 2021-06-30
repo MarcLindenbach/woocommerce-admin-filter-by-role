@@ -1,13 +1,11 @@
 <?php
 /**
- * Plugin Name: woocommerce-admin-filter-by-role
+ * Plugin Name: Woocommerce Admin Filter By Role
+ * Author: Marc Lindenbach
  *
  * @package WooCommerce\Admin
  */
 
-/**
- * Register the JS.
- */
 function add_extension_register_script() {
 	if ( ! class_exists( 'Automattic\WooCommerce\Admin\Loader' ) || ! \Automattic\WooCommerce\Admin\Loader::is_admin_or_embed_page() ) {
 		return;
@@ -110,7 +108,7 @@ function get_user_ids_for_role( $role ) {
   if ( $role == 'all_regular' ) {
     $matching_roles = array_filter($all_roles, function($r) {
       return !array_key_exists('have_wholesale_price', $r['capabilities']) ||
-        $r['capabilities']['have_wholesale_price'] === true;
+        $r['capabilities']['have_wholesale_price'] === false;
     });
     foreach ($matching_roles as $k => $v) {
       $search_roles[] = $k;
